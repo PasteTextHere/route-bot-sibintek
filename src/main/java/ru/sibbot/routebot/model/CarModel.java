@@ -16,7 +16,7 @@ import javax.validation.constraints.NotNull;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class CarModel {
+public class CarModel implements CanBeInlineButton{
 
     /**
      * Название модели автомобиля
@@ -55,7 +55,23 @@ public class CarModel {
     public String getModelName() {
         return this.modelName;
     }
-    
+
+    /**
+     * Получить значение primary key для сущности
+     */
+    @Override
+    public String getIdValueForButton() {
+        return this.modelName;
+    }
+
+    /**
+     * Получить значение отображения кнопки для пользователя
+     */
+    @Override
+    public String getNameForButton() {
+        return this.modelName;
+    }
+
     @Override
     public String toString() {
         return "CarModel{" +
@@ -66,5 +82,4 @@ public class CarModel {
                 ", fuelWinterOutCity=" + fuelWinterOutCity +
                 '}';
     }
-
 }

@@ -8,6 +8,7 @@ import java.util.Collections;
 import java.util.List;
 
 public interface CreateButtonsList {
+
     default List<List<InlineKeyboardButton>> createInlineKeyboardWithButtons(int weight, List<? extends CanBeInlineButton> list) {
         List<List<InlineKeyboardButton>> allButtons = new ArrayList<>();
         List<InlineKeyboardButton> buttonsRow = new ArrayList<>();

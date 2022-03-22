@@ -31,3 +31,5 @@ build/
 
 ### VS Code ###
 .vscode/
+/src/main/java/ru/sibbot/routebot/FillTable.java
+/src/main/resources/application.yml

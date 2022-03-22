@@ -10,17 +10,14 @@ import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardButton;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
-import ru.sibbot.routebot.model.Car;
-import ru.sibbot.routebot.model.CarModel;
+import ru.sibbot.routebot.FillTable;
 import ru.sibbot.routebot.model.Driver;
 import ru.sibbot.routebot.service.CarModelService;
 import ru.sibbot.routebot.service.CarService;
 import ru.sibbot.routebot.service.DriverService;
 import ru.sibbot.routebot.telegram.keyboard.InlineKeyboardsStorage;
+import ru.sibbot.routebot.telegram.keyboard.ReplyKeyboardStorage;
 
 import java.util.*;
 
@@ -36,24 +33,27 @@ public class RouteLongPollingBotHandler extends TelegramLongPollingBot {
     private CarModelService carModelService;
     @Autowired
     private InlineKeyboardsStorage inlineKeyboardsStorage;
+    @Autowired
+    private ReplyKeyboardStorage replyKeyboardStorage;
 
     private final Map<Long, Integer> userRegistrationStepMap = new HashMap<>();
     private final Map<Long, Driver> userRegistrationCreateDriverMap = new HashMap<>();
+    private final Map<Long, String> userCalculatingStepMap = new HashMap<>();
+    private final Map<Long, String> userPreviousMenuMap = new HashMap<>();
 
     @Value("${telegram.bot.token}")
     private String botToken;
     @Value("${telegram.bot.username}")
     private String botUsername;
 
+    private final FillTable fillTable = new FillTable();
+
     @Override
     public void onUpdateReceived(Update update) {
+        if (update.getMessage().hasText() && "filltable".equals(update.getMessage().getText().toLowerCase(Locale.ROOT))) {
+            fillTable.run(driverService, carModelService, carService);
+        }
         if (update.hasMessage()) {
-            if (Objects.equals(update.getMessage().getText(), "123")) {
-                CarModel carmodel = carModelService.addCarModel(new CarModel("default", 10.0, 9.5, 11, 10.5));
-                for (int i = 0; i < 7; i++) {
-                    carService.addCar(new Car("fg"+ i, carmodel, 5645, 6.7));
-                }
-            }
             try {
                 Message message = update.getMessage();
                 if (message.hasText())
@@ -64,12 +64,45 @@ public class RouteLongPollingBotHandler extends TelegramLongPollingBot {
         }
     }
 
+    private void messageOrchestrator(Message message) throws TelegramApiException {
+        long chatId = message.getChatId();
+        switch (message.getText()) {
+            case "Settings":
+                if (driverService.isAdminUser(chatId)) {
+                    userPreviousMenuMap.put(chatId, "admin");
+                    sendMessage(chatId, "Select button", replyKeyboardStorage.getAdminSettingsKeyboard());
+                } else {
+                    userPreviousMenuMap.put(chatId, "user");
+                    sendMessage(chatId, "Select button", replyKeyboardStorage.getUserSettingsKeyboard());
+                }
+                break;
+            case "Delete me":
+                if (userPreviousMenuMap.get(chatId).equals("admin") || userPreviousMenuMap.get(chatId).equals("user")) {
+                    Driver deleteDriver = driverService.deleteDriver(chatId);
+                    sendMessage(chatId, deleteDriver.toString() + " has been removed");
+                    break;
+                }
+            case "Return back":
+                if (userPreviousMenuMap.get(chatId).equals("admin") || userPreviousMenuMap.get(chatId).equals("user")) {
+
+                }
+//            case "Settings" :
+//            case "Settings" :
+//            case "Settings" :
+//            case "Settings" :
+//            case "Settings" :
+//            case "Settings" :
+        }
+    }
+
     private void messageHandler(Message message) throws TelegramApiException {
-//        if (!driverService.driverExist(message.getChatId())) {
-//            driverAddingProcess(message);
-//        }
-        sendMessage(message.getChatId(), "hi from message handler inline", inlineKeyboardsStorage.getAllCarsList(carService));
-//        sendMessage(message.getChatId(), "hi from message handler reply", defaultKeyboard);
+        if (!driverService.driverExist(message.getChatId())) { //если такого водителя еще нет в БД
+            driverAddingProcess(message);
+        } else {
+            messageOrchestrator(message);
+        }
+
+//        sendMessage(message.getChatId(), "test keyboard of cars", inlineKeyboardsStorage.getKeyboardFromList(carService.getCar(0)));
     }
 
     private synchronized void driverAddingProcess(Message message) throws TelegramApiException {
@@ -98,6 +131,9 @@ public class RouteLongPollingBotHandler extends TelegramLongPollingBot {
                 case 3:
                     userRegistrationCreateDriverMap.get(chatId).setPatronymic(message.getText());
                     driverService.addDriver(userRegistrationCreateDriverMap.get(chatId));
+
+                    userPreviousMenuMap.put(chatId, "main"); //dnt know where
+
                     userRegistrationStepMap.replace(chatId, 4);
                     break;
             }

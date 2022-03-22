@@ -1,5 +1,6 @@
 package ru.sibbot.routebot.model;
 
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -16,6 +17,7 @@ import java.util.Objects;
 @Getter
 @Setter
 @NoArgsConstructor
+@AllArgsConstructor
 public class Car implements CanBeInlineButton {
 
     public Car(String registrationNumberFull, CarModel carModel, int odometer, double lastFuel) {
@@ -58,6 +60,29 @@ public class Car implements CanBeInlineButton {
     @OneToOne
     private CarModel carModel;
 
+    /**
+     * Получить из полного госномера только цифры
+     */
+    private int extractInt(String str) {
+        return Integer.parseInt(str.replaceAll("[\\D]", ""));
+    }
+
+    /**
+     * Получить значение primary key для сущности
+     */
+    @Override
+    public String getIdValueForButton() {
+        return registrationNumberFull;
+    }
+
+    /**
+     * Получить значение отображения кнопки для пользователя
+     */
+    @Override
+    public String getNameForButton() {
+        return this.carModel.getModelName() + " " + registrationNumberFull;
+    }
+
     @Override
     public String toString() {
         return "Автомобиль: {" + carModel.getModelName() +
@@ -78,25 +103,5 @@ public class Car implements CanBeInlineButton {
     @Override
     public int hashCode() {
         return Objects.hash(registrationNumberFull, registrationNumberDigits, carModel, odometer, lastFuel);
-    }
-
-    /**
-     * Получить значение primary key для сущности
-     */
-    @Override
-    public String getIdValueForButton() {
-        return registrationNumberFull;
-    }
-
-    /**
-     * Получить значение отобрадения кнопки для пользователя
-     */
-    @Override
-    public String getNameForButton() {
-        return this.carModel.getModelName() + " " + registrationNumberFull;
-    }
-
-    private int extractInt(String str) {
-        return Integer.parseInt(str.replaceAll("[\\D]", ""));
     }
 }

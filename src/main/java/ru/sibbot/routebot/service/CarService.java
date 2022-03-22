@@ -9,7 +9,6 @@ import ru.sibbot.routebot.repository.CarRepository;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 public class CarService {
@@ -33,13 +32,6 @@ public class CarService {
     public Iterable<Car> addAllCars(Iterable<Car> cars) {
         logger.info(cars + " was added");
         return carRepository.saveAll(cars);
-    }
-
-    public String getFullCarNumber(int numberDigits) {
-        List<Car> currentCar = getCar(numberDigits);
-        if (currentCar.size() == 1) {
-            return currentCar.get(0).getRegistrationNumberFull();
-        } else return currentCar.stream().map(Car::getRegistrationNumberFull).collect(Collectors.toList()).toString();
     }
 
     /**

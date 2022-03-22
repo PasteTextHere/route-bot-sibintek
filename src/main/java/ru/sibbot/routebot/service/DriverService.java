@@ -8,6 +8,7 @@ import ru.sibbot.routebot.model.Driver;
 import ru.sibbot.routebot.repository.DriverRepository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class DriverService {
@@ -20,13 +21,11 @@ public class DriverService {
     /**
      * Добавить водителя
      */
-    public Driver addDriver(Driver driver) {
+    public void addDriver(Driver driver) {
         Driver addedDriver = driverRepository.save(driver);
         if (driver.equals(addedDriver)) {
             logger.info(driver + " was added");
-            return addedDriver;
         } else logger.warn(driver + "wasn't added");
-        return addedDriver;
     }
 
     /**
@@ -43,9 +42,27 @@ public class DriverService {
         driverRepository.deleteByNameAndLastNameAndPatronymic(name, lastName, patronymic);
     }
 
+    /**
+     * Удалить водителя по ID
+     */
+    public Driver deleteDriver(long chatId) {
+        Driver currentDriver = driverRepository.findById(chatId).get();
+        driverRepository.deleteById(chatId);
+        return currentDriver;
+    }
+
+    /**
+     * Проверка существования водителя с данным chatID
+     */
     public boolean driverExist(long telegramChatId) {
         return driverRepository.existsById(telegramChatId);
     }
 
-
+    /**
+     * Является ли пользователь администратором
+     */
+    public boolean isAdminUser(long telegramChatId) {
+        Optional<Driver> driver = driverRepository.findById(telegramChatId);
+        return driver.map(Driver::isAdmin).orElseGet(() -> driver.get().isAdmin());
+    }
 }
